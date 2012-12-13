@@ -7,8 +7,9 @@ LOCAL_SRC_FILES := $(call all-java-files-under,src)
 LOCAL_PROGUARD_FLAG_FILES := proguard.flags
 
 LOCAL_AAPT_INCLUDE_ALL_RESOURCES := true
+LOCAL_DEX_PREOPT := false
 
-LOCAL_CERTIFICATE := superuser
+# LOCAL_CERTIFICATE := superuser
 
 include $(BUILD_PACKAGE)
 
