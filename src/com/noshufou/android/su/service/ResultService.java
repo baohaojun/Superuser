@@ -27,14 +27,14 @@ import com.noshufou.android.su.util.Util;
 
 public class ResultService extends IntentService {
     private static final String TAG = "Su.ResultService";
-    
+
     public static final String EXTRA_ACTION = "action";
     public static final int ACTION_RESULT = 1;
     public static final int ACTION_RECYCLE = 2;
-    
+
     final String LAST_NOTIFICATION_UID = "last_notification_uid";
     final String LAST_NOTIFICATION_TIME = "last_notification_time";
-    
+
     public static final String[] PROJECTION = new String[] {
         Apps._ID, Apps.ALLOW, Apps.NOTIFICATIONS, Apps.LOGGING
     };
@@ -47,14 +47,14 @@ public class ResultService extends IntentService {
     // TODO: Add in a license check here
 //    private boolean mLicenseChecked = false;
 //    private boolean mLicensed = true;
-    
+
     private SharedPreferences mPrefs = null;
     private boolean mNotify = true;
     private String mNotifyType = "toast";
     private boolean mLog = true;
-    
+
     private Handler mHandler;
-    
+
     public ResultService() {
         super(TAG);
     }
@@ -62,7 +62,7 @@ public class ResultService extends IntentService {
     @Override
     public void onCreate() {
         super.onCreate();
-        
+
         mHandler = new Handler();
     }
 
@@ -74,6 +74,13 @@ public class ResultService extends IntentService {
             int callerUid = intent.getIntExtra(SuRequestReceiver.EXTRA_CALLERUID, 0);
             int allow = intent.getIntExtra(SuRequestReceiver.EXTRA_ALLOW, -1);
             String cmd = intent.getStringExtra(SuRequestReceiver.EXTRA_CMD);
+            if (cmd == null) {
+                Log.e("bhj", String.format("%s:%d: cmd is null", "ResultService.java", 78));
+                cmd = "null";
+            } else {
+                Log.e("bhj", String.format("%s:%d: cmd is %s", "ResultService.java", 81, cmd));
+            }
+
             long currentTime = System.currentTimeMillis();
 
             long appId = -1;
@@ -107,7 +114,7 @@ public class ResultService extends IntentService {
             throw new IllegalArgumentException();
         }
     }
-    
+
     private void sendNotification(long appId, int callerUid, int allow, long currentTime, String appNotify) {
         // Check to see if we should notify
         if ((appNotify == null && !mNotify) ||
@@ -163,7 +170,7 @@ public class ResultService extends IntentService {
             nm.notify(callerUid, notification);
         }
     }
-    
+
     private void addLog(long appId, int callerUid, int execUid, String execCmd, int allow,
             long currentTime, String appLog, int all) {
         // Check to see if we should log
@@ -172,7 +179,7 @@ public class ResultService extends IntentService {
                 allow == -1) {
             return;
         }
-        
+
         ContentValues values = new ContentValues();
         if (appId == -1) {
             // App was not found in the database, add a row for logging purposes
@@ -185,7 +192,7 @@ public class ResultService extends IntentService {
             appId = Long.parseLong(getContentResolver().insert(Apps.CONTENT_URI, values)
                     .getLastPathSegment());
         }
-        
+
         values.clear();
         values.put(Logs.DATE, currentTime);
         values.put(Logs.TYPE, allow);
@@ -199,7 +206,7 @@ public class ResultService extends IntentService {
             // Log recycling is disabled, no need to go further
             return;
         }
-        
+
         int limit = mPrefs.getInt(Preferences.LOG_ENTRY_LIMIT, 200);
         Cursor c = getContentResolver().query(Logs.CONTENT_URI, new String[] { "COUNT() as rows" },
                 null, null, null);
@@ -217,7 +224,7 @@ public class ResultService extends IntentService {
             }
         }
     }
-    
+
     private void ensurePrefs() {
         if (mPrefs == null) {
             mPrefs = PreferenceManager.getDefaultSharedPreferences(this);

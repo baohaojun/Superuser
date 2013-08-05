@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2011 Adam Shanks (ChainsDD)
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -33,10 +33,16 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.noshufou.android.su.util.Util;
+import java.lang.IllegalArgumentException;
+import java.lang.Long;
+import java.lang.Override;
+import java.lang.String;
+import java.lang.System;
+import java.util.ArrayList;
 
 public class PermissionsProvider extends ContentProvider {
     private static final String TAG = "Su.PermissionsProvider";
-    
+
     public static final String AUTHORITY = "com.noshufou.android.su.provider";
 
     public static class Apps {
@@ -48,12 +54,12 @@ public class PermissionsProvider extends ContentProvider {
         public static final Uri CONTENT_URI =
             Uri.parse("content://com.noshufou.android.su.provider/apps");
         public static final Uri CONTENT_URI_UID_GRP =
-        		Uri.parse("content://com.noshufou.android.su.provider/apps/uidgrp");
+                        Uri.parse("content://com.noshufou.android.su.provider/apps/uidgrp");
         public static final Uri CONTENT_URI_UID =
-        		Uri.parse("content://com.noshufou.android.su.provider/apps/uid");
+                        Uri.parse("content://com.noshufou.android.su.provider/apps/uid");
         public static final Uri CONTENT_UID_LOGS =
-        		Uri.parse("content://com.noshufou.android.su.provider/apps/uid/logs");
-        public static final Uri COUNT_CONTENT_URI = 
+                        Uri.parse("content://com.noshufou.android.su.provider/apps/uid/logs");
+        public static final Uri COUNT_CONTENT_URI =
             Uri.parse("content://com.noshufou.android.su.provider/apps/count");
         public static final String TABLE_NAME = "apps";
         public static final String APPS_LOGS_JOIN =
@@ -275,14 +281,33 @@ public class PermissionsProvider extends ContentProvider {
         case APP_COUNT_TYPE:
             qBuilder.appendWhere("apps.allow=" + uri.getPathSegments().get(2));
         }
-        
+
         if (uriMatch == APPS_UID_GRP)
-        	groupBy = Apps.UID + ", " + Apps.ALLOW;
+                groupBy = Apps.UID + ", " + Apps.ALLOW;
 
         // TODO: Check columns in incoming projection to make sure they're valid
         projection = projection==null?defaultProjection:projection;
         Cursor c = null;
         try {
+            if (selectionArgs != null) {
+                Log.e("bhj", String.format("%s:%d: selectionArgs is not null", "PermissionsProvider.java", 293));
+
+                ArrayList<String> al = new ArrayList<String>();
+                for (String sa : selectionArgs) {
+                    if (sa != null) {
+                        Log.e("bhj", String.format("%s:%d: add %s", "PermissionsProvider.java", 295, sa));
+
+                        al.add(sa);
+                    } else {
+                        Log.e("bhj", String.format("%s:%d: sa is null", "PermissionsProvider.java", 302));
+                    }
+                }
+
+                selectionArgs = al.toArray(new String[]{""});
+            }
+
+            Log.e("bhj", String.format("%s:%d: projection x is %s, selection is %s, selectionArgs is %s, groupBy is %s", "PermissionsProvider.java", 286, TextUtils.join(" ", projection), selection, selectionArgs == null ? "null" : TextUtils.join(" ", selectionArgs), groupBy));
+
             c = qBuilder.query(mDb,
                     projection,
                     selection,
@@ -334,7 +359,7 @@ public class PermissionsProvider extends ContentProvider {
                 logValues.put(Logs.DATE, System.currentTimeMillis());
                 logValues.put(Logs.TYPE, Logs.LogType.CREATE);
                 mDb.insert(Logs.TABLE_NAME, null, logValues);
-                
+
                 Util.writeStoreFile(mContext,
                         values.getAsInteger(Apps.UID),
                         values.getAsInteger(Apps.EXEC_UID),
@@ -415,8 +440,8 @@ public class PermissionsProvider extends ContentProvider {
 
         switch (sUriMatcher.match(uri)) {
         case APP_ID:
-        	int uid = 0, execUid = 0;
-        	String cmd = null;
+                int uid = 0, execUid = 0;
+                String cmd = null;
             Cursor c = mDb.query(Apps.TABLE_NAME,
                     new String[] { Apps.UID, Apps.EXEC_UID, Apps.EXEC_CMD },
                     Apps._ID + "=" + uri.getPathSegments().get(1) +
@@ -425,9 +450,9 @@ public class PermissionsProvider extends ContentProvider {
                     selectionArgs,
                     null, null, null);
             if (c.moveToFirst()) {
-            	uid = c.getInt(c.getColumnIndex(Apps.UID));
-            	execUid = c.getInt(c.getColumnIndex(Apps.EXEC_UID));
-            	cmd = c.getString(c.getColumnIndex(Apps.EXEC_CMD));
+                uid = c.getInt(c.getColumnIndex(Apps.UID));
+                execUid = c.getInt(c.getColumnIndex(Apps.EXEC_UID));
+                cmd = c.getString(c.getColumnIndex(Apps.EXEC_CMD));
             }
             c.close();
             count = mDb.delete(Apps.TABLE_NAME,
@@ -510,7 +535,7 @@ public class PermissionsProvider extends ContentProvider {
             }
 
             if (upgradeVersion == 3) {
-                Cursor c = db.query(Apps.TABLE_NAME, 
+                Cursor c = db.query(Apps.TABLE_NAME,
                         new String[] { Apps._ID, Apps.UID, Apps.NAME },
                         null, null, null, null, null);
                 while (c.moveToNext()) {
